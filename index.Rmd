@@ -1,5 +1,5 @@
 ---
-title: "Exercise Prediction"
+title: "Predicting Exercises"
 author: "Nico Higgs"
 date: "May 21, 2017"
 output: html_document
@@ -9,22 +9,80 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Data Cleaning
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Many of the columns of the data set contain an overwhelming number of NA's. We will see if the non-NA's show a pattern, and if not we will drop them. First we split the data into training and test sets and perform our analysis on the training set.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r error=FALSE, message=FALSE}
+library(caret)
+library(dplyr)
+data <- read.csv("pml-training.csv", na.strings=c("NA", ""), header=TRUE)
+final_test <- read.csv("pml-testing.csv", na.strings=c("NA", ""), header=TRUE)
+inTrain <- createDataPartition(data$classe, p=0.75, list=FALSE)
+training <- data[inTrain,]
+testing <- data[-inTrain,]
+na_view <- training %>% filter(!is.na(amplitude_pitch_dumbbell))
+print(length(na_view))
+print(unique(na_view$classe))
 ```
 
-## Including Plots
+We see that there are non-NA entries, but they are not uniquely associated with a classe outcome. This same observation holds for all of the other sparse features (sparing the details for brevity) and as such we will opt to remove the features that contain NA's.
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r error=FALSE, message=FALSE}
+col.na <- colSums(sapply(training, is.na))
+training <- training[,col.na == 0]
+dim(training)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+We will also remove the first 7 columns as they are not relevant for prediction purposes.
+
+```{r error=FALSE, message=FALSE}
+training <- training[,8:length(training)]
+```
+
+## Model Training and Selection
+
+We will fit three types of models: decision trees, random forest trees, and boosted trees. We will tune and compare them to each other using cross-validation. First we fit a decision tree.
+
+```{r error=FALSE, message=FALSE}
+train_control <- trainControl(method="cv", number=5)
+Treemodel <- train(classe ~ ., method="rpart", data=training, trControl=train_control)
+print(Treemodel)
+```
+
+Then we will fit a gradient boosted model.
+
+```{r error=FALSE, message=FALSE}
+train_control <- trainControl(method="cv", number=5, verboseIter=FALSE)
+GBMmodel <- train(classe ~ ., method="gbm", data=training, trControl=train_control,
+                  verbose=FALSE)
+print(GBMmodel)
+```
+
+And finally a random forest model.
+
+```{r error=FALSE, message=FALSE}
+train_control <- trainControl(method="cv", number=5)
+RFmodel <- train(classe ~ ., method="rf", data=training, trControl=train_control)
+print(RFmodel)
+```
+
+Based on our results we elect to use the random forest model.
+
+## Out of Sample Error
+
+In order to get a more realistic reading of its out-of-sample error we will test it on unseen data.
+
+```{r}
+predictions <- predict(RFmodel, newdata=testing)
+confusionMatrix(predictions, testing$classe)
+```
+
+Looks like our model did not overfit and should be effective to make the necessary 20 predictions.
+
+## Final 20 Predictions
+
+```{r}
+predict(RFmodel, newdata=final_test)
+```
