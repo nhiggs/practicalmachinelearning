@@ -145,7 +145,7 @@ print(length(na_view))</code></pre>
 training &lt;- training[,col.na == 0]
 dim(training)</code></pre>
 <pre><code>## [1] 14718    60</code></pre>
-<p>We will also remove the first 7 columns as they are not relevant for prediction purposes.</p>
+<p>We will also remove the first 7 columns as they are not relevant for generalized prediction purposes (e.g. id, name, window etc.).</p>
 <pre class="r"><code>training &lt;- training[,8:length(training)]</code></pre>
 </div>
 <div id="model-training-and-selection" class="section level2">
@@ -162,16 +162,16 @@ print(Treemodel)</code></pre>
 ## 
 ## No pre-processing
 ## Resampling: Cross-Validated (5 fold) 
-## Summary of sample sizes: 11776, 11774, 11776, 11774, 11772 
+## Summary of sample sizes: 11775, 11775, 11774, 11774, 11774 
 ## Resampling results across tuning parameters:
 ## 
-##   cp          Accuracy   Kappa     
-##   0.03503275  0.5086998  0.35829659
-##   0.05898921  0.3908957  0.16638317
-##   0.11696573  0.3331118  0.07419361
+##   cp          Accuracy   Kappa    
+##   0.03170986  0.5309118  0.3916106
+##   0.06006519  0.4196922  0.2139150
+##   0.11829488  0.3342155  0.0758971
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was cp = 0.03503275.</code></pre>
+## The final value used for the model was cp = 0.03170986.</code></pre>
 <p>Then we will fit a gradient boosted model.</p>
 <pre class="r"><code>train_control &lt;- trainControl(method=&quot;cv&quot;, number=5, verboseIter=FALSE)
 GBMmodel &lt;- train(classe ~ ., method=&quot;gbm&quot;, data=training, trControl=train_control,
@@ -185,19 +185,19 @@ print(GBMmodel)</code></pre>
 ## 
 ## No pre-processing
 ## Resampling: Cross-Validated (5 fold) 
-## Summary of sample sizes: 11775, 11775, 11772, 11776, 11774 
+## Summary of sample sizes: 11775, 11774, 11773, 11776, 11774 
 ## Resampling results across tuning parameters:
 ## 
 ##   interaction.depth  n.trees  Accuracy   Kappa    
-##   1                   50      0.7564860  0.6912610
-##   1                  100      0.8204906  0.7728510
-##   1                  150      0.8555497  0.8171573
-##   2                   50      0.8574516  0.8193656
-##   2                  100      0.9048101  0.8795560
-##   2                  150      0.9302216  0.9116993
-##   3                   50      0.8962483  0.8686635
-##   3                  100      0.9400054  0.9240930
-##   3                  150      0.9616113  0.9514325
+##   1                   50      0.7544504  0.6887473
+##   1                  100      0.8196083  0.7715860
+##   1                  150      0.8535127  0.8145885
+##   2                   50      0.8524935  0.8130709
+##   2                  100      0.9102455  0.8863763
+##   2                  150      0.9343655  0.9169387
+##   3                   50      0.8966573  0.8691591
+##   3                  100      0.9440816  0.9292452
+##   3                  150      0.9617467  0.9516023
 ## 
 ## Tuning parameter 'shrinkage' was held constant at a value of 0.1
 ## 
@@ -217,17 +217,17 @@ print(RFmodel)</code></pre>
 ## 
 ## No pre-processing
 ## Resampling: Cross-Validated (5 fold) 
-## Summary of sample sizes: 11776, 11773, 11774, 11774, 11775 
+## Summary of sample sizes: 11775, 11775, 11773, 11775, 11774 
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy   Kappa    
-##    2    0.9913711  0.9890832
-##   27    0.9917786  0.9895996
-##   52    0.9826740  0.9780827
+##    2    0.9914394  0.9891699
+##   27    0.9908277  0.9883970
+##   52    0.9850522  0.9810914
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was mtry = 27.</code></pre>
-<p>Based on our results we elect to use the random forest model with mty = 41.</p>
+## The final value used for the model was mtry = 2.</code></pre>
+<p>Based on our results we elect to use the random forest model as it was the highest performing.</p>
 </div>
 <div id="out-of-sample-error" class="section level2">
 <h2>Out of Sample Error</h2>
@@ -238,34 +238,34 @@ confusionMatrix(predictions, testing$classe)</code></pre>
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 1392    6    0    0    0
-##          B    3  941    2    1    0
-##          C    0    2  851    4    0
-##          D    0    0    2  797    0
-##          E    0    0    0    2  901
+##          A 1395    6    0    0    0
+##          B    0  942    8    0    0
+##          C    0    1  847   20    0
+##          D    0    0    0  784    2
+##          E    0    0    0    0  899
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.9955          
-##                  95% CI : (0.9932, 0.9972)
+##                Accuracy : 0.9925          
+##                  95% CI : (0.9896, 0.9947)
 ##     No Information Rate : 0.2845          
 ##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
 ##                                           
-##                   Kappa : 0.9943          
+##                   Kappa : 0.9905          
 ##  Mcnemar's Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            0.9978   0.9916   0.9953   0.9913   1.0000
-## Specificity            0.9983   0.9985   0.9985   0.9995   0.9995
-## Pos Pred Value         0.9957   0.9937   0.9930   0.9975   0.9978
-## Neg Pred Value         0.9991   0.9980   0.9990   0.9983   1.0000
+## Sensitivity            1.0000   0.9926   0.9906   0.9751   0.9978
+## Specificity            0.9983   0.9980   0.9948   0.9995   1.0000
+## Pos Pred Value         0.9957   0.9916   0.9758   0.9975   1.0000
+## Neg Pred Value         1.0000   0.9982   0.9980   0.9951   0.9995
 ## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
-## Detection Rate         0.2838   0.1919   0.1735   0.1625   0.1837
-## Detection Prevalence   0.2851   0.1931   0.1748   0.1629   0.1841
-## Balanced Accuracy      0.9981   0.9950   0.9969   0.9954   0.9998</code></pre>
-<p>Looks like our model did not overfit and should be effective to make the necessary 20 predictions.</p>
+## Detection Rate         0.2845   0.1921   0.1727   0.1599   0.1833
+## Detection Prevalence   0.2857   0.1937   0.1770   0.1603   0.1833
+## Balanced Accuracy      0.9991   0.9953   0.9927   0.9873   0.9989</code></pre>
+<p>Looks like our model did not overfit and has an expected out of sample error of less than 1%. Therefore, it should be effective to make the necessary 20 predictions.</p>
 </div>
 <div id="final-20-predictions" class="section level2">
 <h2>Final 20 Predictions</h2>

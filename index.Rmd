@@ -35,7 +35,7 @@ training <- training[,col.na == 0]
 dim(training)
 ```
 
-We will also remove the first 7 columns as they are not relevant for prediction purposes.
+We will also remove the first 7 columns as they are not relevant for generalized prediction purposes (e.g. id, name, window etc.).
 
 ```{r error=FALSE, message=FALSE}
 training <- training[,8:length(training)]
@@ -68,7 +68,7 @@ RFmodel <- train(classe ~ ., method="rf", data=training, trControl=train_control
 print(RFmodel)
 ```
 
-Based on our results we elect to use the random forest model.
+Based on our results we elect to use the random forest model as it was the highest performing.
 
 ## Out of Sample Error
 
@@ -79,7 +79,7 @@ predictions <- predict(RFmodel, newdata=testing)
 confusionMatrix(predictions, testing$classe)
 ```
 
-Looks like our model did not overfit and should be effective to make the necessary 20 predictions.
+Looks like our model did not overfit and has an expected out of sample error of less than 1%. Therefore, it should be effective to make the necessary 20 predictions.
 
 ## Final 20 Predictions
 
